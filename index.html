@@ -2,88 +2,178 @@
 <html lang="es">
 <head>
 <meta charset="UTF-8" />
-<title>Timer Pistola Estándar Modificado</title>
+<title>Timer Pistola Estándar con Órdenes y Sonidos</title>
 <style>
   body { font-family: Arial, sans-serif; text-align: center; margin-top: 50px; }
   #timer { font-size: 96px; font-weight: bold; margin-bottom: 20px; }
-  #phase { font-size: 36px; font-weight: bold; margin-bottom: 10px; }
-  #nextPhase { font-size: 24px; color: #555; margin-bottom: 30px; }
-  button { font-size: 24px; padding: 10px 20px; }
+  #phase { font-size: 32px; font-weight: bold; margin-bottom: 10px; }
+  #order { font-size: 28px; color: #003366; margin-bottom: 30px; min-height: 60px; }
+  #nextPhaseSection { font-size: 24px; color: #555; margin-bottom: 30px; }
+  button { font-size: 24px; padding: 10px 20px; margin: 0 10px; }
 </style>
 </head>
 <body>
 
 <div id="phase">Preparado para iniciar</div>
 <div id="timer">00:00</div>
-<div id="nextPhase">Siguiente: --</div>
-<button onclick="startTimer()">Iniciar</button>
+<div id="order">Orden: --</div>
+<div id="nextPhaseSection">
+  <strong>Siguiente orden:</strong> <span id="nextOrder">--</span>
+</div>
+
+<button id="startPauseBtn" onclick="startPauseTimer()">Iniciar</button>
 
 <script>
-let rounds = [
-  {name: "Ronda 1: 150 segundos", duration: 150},
-  {name: "Descanso 1: 60 segundos", duration: 60},
-  {name: "Ronda 2: 150 segundos", duration: 150},
-  {name: "Descanso 2: 60 segundos", duration: 60},
-  {name: "Ronda 3: 150 segundos", duration: 150},
-  {name: "Descanso 3: 60 segundos", duration: 60},
-  {name: "Ronda 4: 150 segundos", duration: 150},
-  {name: "Descanso 4: 60 segundos", duration: 60},
-  {name: "Ronda 5: 20 segundos", duration: 20},
-  {name: "Descanso 5: 60 segundos", duration: 60},
-  {name: "Ronda 6: 20 segundos", duration: 20},
-  {name: "Descanso 6: 60 segundos", duration: 60},
-  {name: "Ronda 7: 20 segundos", duration: 20},
-  {name: "Descanso 7: 60 segundos", duration: 60},
-  {name: "Ronda 8: 20 segundos", duration: 20},
-  {name: "Descanso 8: 60 segundos", duration: 60},
-  {name: "Ronda 9: 10 segundos", duration: 10},
-  {name: "Descanso 9: 60 segundos", duration: 60},
-  {name: "Ronda 10: 10 segundos", duration: 10},
-  {name: "Descanso 10: 60 segundos", duration: 60},
-  {name: "Ronda 11: 10 segundos", duration: 10}
+// Definición de fases y órdenes con tiempos y acciones auditivas a reproducir
+const phases = [
+  {name: "Fase A - Serie 1 (150 s, 5 disparos)", duration:150, orderStart:"150 SECONDS SERIES — CARGUEN", orderAttention:"ATENCIÓN", orderEnd:"STOP — DESCARGUEN"},
+  {name: "Pausa breve (entre series)", duration: 60, orderStart:"", orderAttention:"", orderEnd:""},
+  {name: "Fase A - Serie 2 (150 s, 5 disparos)", duration:150, orderStart:"150 SECONDS SERIES — CARGUEN", orderAttention:"ATENCIÓN", orderEnd:"STOP — DESCARGUEN"},
+  {name: "Pausa breve (entre series)", duration: 60, orderStart:"", orderAttention:"", orderEnd:""},
+  {name: "Fase A - Serie 3 (150 s, 5 disparos)", duration:150, orderStart:"150 SECONDS SERIES — CARGUEN", orderAttention:"ATENCIÓN", orderEnd:"STOP — DESCARGUEN"},
+  {name: "Pausa breve (entre series)", duration: 60, orderStart:"", orderAttention:"", orderEnd:""},
+  {name: "Fase A - Serie 4 (150 s, 5 disparos)", duration:150, orderStart:"150 SECONDS SERIES — CARGUEN", orderAttention:"ATENCIÓN", orderEnd:"STOP — DESCARGUEN"},
+  {name: "Descanso 1 minuto", duration:60, orderStart:"", orderAttention:"", orderEnd:""},
+
+  {name: "Fase B - Serie 1 (20 s, 5 disparos)", duration:20, orderStart:"20 SECONDS SERIES — CARGUEN", orderAttention:"ATENCIÓN", orderEnd:"STOP — DESCARGUEN"},
+  {name: "Descanso 1 minuto", duration:60, orderStart:"", orderAttention:"", orderEnd:""},
+  {name: "Fase B - Serie 2 (20 s, 5 disparos)", duration:20, orderStart:"20 SECONDS SERIES — CARGUEN", orderAttention:"ATENCIÓN", orderEnd:"STOP — DESCARGUEN"},
+  {name: "Descanso 1 minuto", duration:60, orderStart:"", orderAttention:"", orderEnd:""},
+  {name: "Fase B - Serie 3 (20 s, 5 disparos)", duration:20, orderStart:"20 SECONDS SERIES — CARGUEN", orderAttention:"ATENCIÓN", orderEnd:"STOP — DESCARGUEN"},
+  {name: "Descanso 1 minuto", duration:60, orderStart:"", orderAttention:"", orderEnd:""},
+  {name: "Fase B - Serie 4 (20 s, 5 disparos)", duration:20, orderStart:"20 SECONDS SERIES — CARGUEN", orderAttention:"ATENCIÓN", orderEnd:"STOP — DESCARGUEN"},
+  {name: "Descanso 1 minuto", duration:60, orderStart:"", orderAttention:"", orderEnd:""},
+
+  {name: "Fase C - Serie 1 (10 s, 5 disparos)", duration:10, orderStart:"10 SECONDS SERIES — CARGUEN", orderAttention:"ATENCIÓN", orderEnd:"STOP — DESCARGUEN"},
+  {name: "Descanso 1 minuto", duration:60, orderStart:"", orderAttention:"", orderEnd:""},
+  {name: "Fase C - Serie 2 (10 s, 5 disparos)", duration:10, orderStart:"10 SECONDS SERIES — CARGUEN", orderAttention:"ATENCIÓN", orderEnd:"STOP — DESCARGUEN"},
+  {name: "Descanso 1 minuto", duration:60, orderStart:"", orderAttention:"", orderEnd:""},
+  {name: "Fase C - Serie 3 (10 s, 5 disparos)", duration:10, orderStart:"10 SECONDS SERIES — CARGUEN", orderAttention:"ATENCIÓN", orderEnd:"STOP — DESCARGUEN"},
 ];
 
-let currentPhase = 0;
-let timerInterval;
+// Sonidos codificados en base64 (simple beep para inicio, fin y tic tac)
+const soundStart = new Audio("data:audio/wav;base64,UklGRkQAAABXQVZFZm10IBAAAAABAAEA..."); // reemplazar por sonido real o usar audio externo
+const soundAttention = new Audio("data:audio/wav;base64,UklGRjQAAABXQVZFZm10IBAAAAABAAEA..."); // sonido señal ATENCIÓN
+const soundStop = new Audio("data:audio/wav;base64,UklGRjQAAABXQVZFZm10IBAAAAABAAEA..."); // sonido final STOP
+const soundTick = new Audio("data:audio/wav;base64,UklGRiYAAABXQVZFZm10IBAAAAABAAEA..."); // tic tac
 
-function startTimer() {
-  if(timerInterval) return; // evitar múltiples inicios
-  nextPhase();
+let currentPhaseIndex = 0;
+let timeLeft = 0;
+let interval = null;
+let isPaused = false;
+
+const phaseEl = document.getElementById("phase");
+const timerEl = document.getElementById("timer");
+const orderEl = document.getElementById("order");
+const nextOrderEl = document.getElementById("nextOrder");
+const startPauseBtn = document.getElementById("startPauseBtn");
+
+function playSound(audio) {
+  if(audio) {
+    audio.currentTime = 0; 
+    audio.play();
+  }
 }
 
-function nextPhase() {
-  if (currentPhase >= rounds.length) {
-    document.getElementById("phase").textContent = "Entrenamiento completado";
-    document.getElementById("timer").textContent = "00:00";
-    document.getElementById("nextPhase").textContent = "Siguiente: --";
-    timerInterval = null;
-    return;
+function startPauseTimer() {
+  if(interval === null) {
+    if(currentPhaseIndex >= phases.length) {
+      currentPhaseIndex = 0;
+    }
+    if(timeLeft === 0) {
+      timeLeft = phases[currentPhaseIndex].duration;
+      updateDisplay();
+      playOrderSoundStart();
+    }
+    interval = setInterval(tick, 1000);
+    isPaused = false;
+    startPauseBtn.textContent = "Pausa";
+  } else {
+    togglePause();
   }
-  let phase = rounds[currentPhase];
-  let nextPhaseName = currentPhase + 1 < rounds.length ? rounds[currentPhase + 1].name : "--";
-  let timeLeft = phase.duration;
-  document.getElementById("phase").textContent = phase.name;
-  document.getElementById("nextPhase").textContent = "Siguiente: " + nextPhaseName;
-  updateTimerDisplay(timeLeft);
+}
 
-  timerInterval = setInterval(() => {
+function togglePause() {
+  if(isPaused) {
+    interval = setInterval(tick, 1000);
+    isPaused = false;
+    startPauseBtn.textContent = "Pausa";
+  } else {
+    clearInterval(interval);
+    interval = null;
+    isPaused = true;
+    startPauseBtn.textContent = "Continuar";
+  }
+}
+
+function tick() {
+  if(timeLeft > 0) {
     timeLeft--;
     updateTimerDisplay(timeLeft);
-    if(timeLeft <= 0) {
-      clearInterval(timerInterval);
-      timerInterval = null;
-      currentPhase++;
-      setTimeout(nextPhase, 1000);
+    
+    if(timeLeft <= 5 && timeLeft > 0) {
+      playSound(soundTick);
     }
-  }, 1000);
+  }
+  if(timeLeft <= 0) {
+    playSound(soundStop);
+    clearInterval(interval);
+    interval = null;
+    currentPhaseIndex++;
+    if(currentPhaseIndex < phases.length) {
+      setTimeout(() => {
+        timeLeft = phases[currentPhaseIndex].duration;
+        updateDisplay();
+        playOrderSoundStart();
+        interval = setInterval(tick, 1000);
+      }, 1500);
+    } else {
+      phaseEl.textContent = "Entrenamiento completado";
+      timerEl.textContent = "00:00";
+      orderEl.textContent = "Orden: --";
+      nextOrderEl.textContent = "--";
+      startPauseBtn.textContent = "Reiniciar";
+      currentPhaseIndex = phases.length;
+      timeLeft = 0;
+    }
+  }
+}
+
+function playOrderSoundStart() {
+  const phase = phases[currentPhaseIndex];
+  if(phase.orderStart) {
+    orderEl.textContent = "Orden: " + phase.orderStart;
+    playSound(soundStart);
+    setTimeout(() => {
+      if(phase.orderAttention) {
+        orderEl.textContent = "Orden: " + phase.orderAttention;
+        playSound(soundAttention);
+      }
+    }, 3000);
+  } else {
+    orderEl.textContent = "Orden: --";
+  }
+  let nextPhase = phases[currentPhaseIndex+1];
+  if(nextPhase && nextPhase.orderStart) {
+    nextOrderEl.textContent = nextPhase.orderStart;
+  } else {
+    nextOrderEl.textContent = "--";
+  }
+}
+
+function updateDisplay() {
+  const phase = phases[currentPhaseIndex];
+  phaseEl.textContent = phase.name;
+  updateTimerDisplay(timeLeft);
 }
 
 function updateTimerDisplay(seconds) {
   let min = Math.floor(seconds / 60);
   let sec = seconds % 60;
-  document.getElementById("timer").textContent = 
+  timerEl.textContent =
     (min < 10 ? "0" + min : min) + ":" + (sec < 10 ? "0" + sec : sec);
 }
+
 </script>
 
 </body>
