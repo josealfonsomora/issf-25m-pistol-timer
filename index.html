@@ -4,34 +4,74 @@
 <meta charset="UTF-8" />
 <title>Timer 20m Pistola Standard</title>
 <style>
-  body { font-family: Arial, sans-serif; text-align: center; margin-top: 20px; transition: background-color 0.5s, color 0.5s; }
-  #timer { font-size: 96px; font-weight: bold; margin-bottom: 20px; }
+  :root{
+    --carguen-bg: #b30000;
+    --tiro-bg: #004d00;
+    --text-on-dark: #ffffff;
+  }
+
+  body {
+    font-family: Arial, sans-serif;
+    text-align: center;
+    margin-top: 20px;
+    transition: background-color 0.25s, color 0.25s;
+    background-color: var(--carguen-bg);
+    color: var(--text-on-dark);
+  }
+
+  #logo { max-height: 100px; display:block; margin: 0 auto 20px; }
+
   #phase { font-size: 32px; font-weight: bold; margin-bottom: 10px; }
+  #timer { font-size: 96px; font-weight: bold; margin-bottom: 20px; }
   #order { font-size: 48px; font-weight: bold; margin-bottom: 30px; min-height: 70px; }
   #nextPhaseSection { font-size: 28px; color: orange; margin-bottom: 30px; }
+
   button { font-size: 24px; padding: 10px 20px; margin: 10px 10px 0 10px; cursor: pointer; }
-  img#logo { max-height: 100px; display: block; margin: 0 auto 20px; }
-  body.carguen { background-color: #b30000; color: white; }
-  body.tiempo { background-color: #004d00; color: white; }
+
+  /* Estados base */
+  body.carguen { background-color: var(--carguen-bg); color: var(--text-on-dark); }
+  body.tiempo  { background-color: var(--tiro-bg); color: var(--text-on-dark); }
+  body.neutral { background-color: #222; color: var(--text-on-dark); }
+
+  /* Efecto flash (override temporal del fondo) */
+  .flash {
+    animation: flash-bg 0.6s linear infinite;
+  }
+
+  @keyframes flash-bg {
+    0%   { background-color: #fffae6; color: #000; }
+    25%  { background-color: #ffd4d4; color: #000; }
+    50%  { background-color: #d6ffd6; color: #000; }
+    75%  { background-color: #d6e0ff; color: #000; }
+    100% { background-color: #fff2d6; color: #000; }
+  }
+
+  /* Aseguramos que el texto del temporizador se lea bien durante el flash */
+  .flash #timer,
+  .flash #phase,
+  .flash #order {
+    text-shadow: 0 0 6px rgba(0,0,0,0.6);
+  }
 </style>
 </head>
 <body class="carguen">
 
-<img id="logo" src="logo.jpg" alt="Logo">
+  <!-- Logo visible pero pequeño para no dificultar lectura -->
+  <img id="logo" src="logo.jpg" alt="Logo">
 
-<div id="phase">Preparado para iniciar</div>
-<div id="timer">00:00</div>
-<div id="order">--</div>
-<div id="nextPhaseSection">Siguiente ronda: --</div>
+  <div id="phase">Preparado para iniciar</div>
+  <div id="timer">00:00</div>
+  <div id="order">--</div>
+  <div id="nextPhaseSection">Siguiente ronda: --</div>
 
-<div id="buttons">
-  <button id="startPauseBtn" onclick="startPauseTimer()">Iniciar</button>
-  <button onclick="nextPhase()">Siguiente ronda</button>
-  <button onclick="resetTimer()">Reiniciar</button>
-</div>
+  <div id="buttons">
+    <button id="startPauseBtn" onclick="startPauseTimer()">Iniciar</button>
+    <button onclick="nextPhase()">Siguiente ronda</button>
+    <button onclick="resetTimer()">Reiniciar</button>
+  </div>
 
 <script>
-// Secuencia de fases actualizada
+// Secuencia de fases (Carguen = 60s). Última fase "Descarguen" sin temporizador.
 const phases = [
   {name: "Carguen", type:"carguen", duration:60},
   {name: "Ronda A - 1", type:"tiro", duration:150},
@@ -59,7 +99,7 @@ const phases = [
   {name: "Ronda C - 3", type:"tiro", duration:10},
   {name: "Carguen", type:"carguen", duration:60},
   {name: "Ronda C - 4", type:"tiro", duration:10},
-  {name: "Descarguen", type:"descarguen", duration:0} // última fase, sin temporizador
+  {name: "Descarguen", type:"descarguen", duration:0}
 ];
 
 let currentPhaseIndex = 0;
@@ -75,19 +115,22 @@ const startPauseBtn = document.getElementById("startPauseBtn");
 
 const beepSound = new Audio("https://actions.google.com/sounds/v1/alarms/beep_short.ogg");
 
+// Reproducir pitido
 function playBeep() {
-  beepSound.currentTime = 0;
-  beepSound.play();
+  // manejar error de reproducción si el navegador bloquea autoplay
+  try {
+    beepSound.currentTime = 0;
+    beepSound.play();
+  } catch(e) { /* silent */ }
 }
 
-function setBodyClass() {
-  if(phases[currentPhaseIndex].type === "carguen") {
-    document.body.className = "carguen";
-  } else if(phases[currentPhaseIndex].type === "tiro") {
-    document.body.className = "tiempo";
-  } else {
-    document.body.className = "";
-  }
+function setBodyClassForPhase() {
+  // eliminamos clases previas y aplicamos la de estado
+  document.body.classList.remove("carguen","tiempo","neutral");
+  const t = phases[currentPhaseIndex].type;
+  if(t === "carguen") document.body.classList.add("carguen");
+  else if(t === "tiro") document.body.classList.add("tiempo");
+  else document.body.classList.add("neutral");
 }
 
 function formatTime(seconds) {
@@ -98,50 +141,104 @@ function formatTime(seconds) {
 
 function updateDisplay() {
   phaseEl.textContent = phases[currentPhaseIndex].name;
-  // Solo mostrar "Carguen" en #order, no mostrar "Tiempo de tiro"
-  orderEl.textContent = phases[currentPhaseIndex].type === "carguen" ? "Carguen" : "--";
 
+  // Mostrar emoji en fase de tiro, "Carguen" en carguen, y "Descarguen" en la última fase
+  if(phases[currentPhaseIndex].type === "tiro") {
+    orderEl.textContent = "🔫";
+  } else if(phases[currentPhaseIndex].type === "carguen") {
+    orderEl.textContent = "Carguen";
+  } else {
+    orderEl.textContent = "Descarguen";
+  }
+
+  // Siguiente ronda en naranja (si existe)
   if(currentPhaseIndex + 1 < phases.length){
-    let nextPhase = phases[currentPhaseIndex+1];
+    const nextPhase = phases[currentPhaseIndex + 1];
     nextPhaseEl.textContent = `Siguiente ronda: ${nextPhase.type === "carguen" ? "Carguen" : nextPhase.name}`;
     nextPhaseEl.style.color = "orange";
   } else {
     nextPhaseEl.textContent = "Siguiente ronda: --";
+    nextPhaseEl.style.color = "orange";
   }
 
-  timerEl.textContent = (phases[currentPhaseIndex].type === "descarguen") ? "" : formatTime(timeLeft);
-  setBodyClass();
+  // Mostrar el temporizador grande solo si no es la fase "descarguen"
+  if(phases[currentPhaseIndex].type === "descarguen") {
+    timerEl.textContent = ""; // sin tiempo
+  } else {
+    timerEl.textContent = formatTime(timeLeft);
+  }
+
+  setBodyClassForPhase();
 }
 
+function startFlash() {
+  document.body.classList.add("flash");
+}
+
+function stopFlash() {
+  document.body.classList.remove("flash");
+}
+
+// tick cada segundo
 function tick() {
-  if(timeLeft > 0){
+  // Si la fase actual es "descarguen" no hacer nada
+  if(phases[currentPhaseIndex].type === "descarguen") {
+    stopTimer();
+    updateDisplay();
+    return;
+  }
+
+  if(timeLeft > 0) {
     timeLeft--;
-    if(timeLeft <= 5) playBeep();
+
+    // Si estamos en carguen y quedan <=5s, activamos flash y pitidos
+    if(phases[currentPhaseIndex].type === "carguen" && timeLeft <= 5 && timeLeft > 0) {
+      startFlash();
+    } else {
+      // si no estamos en la condición, aseguramos quitar el flash
+      if(document.body.classList.contains("flash")) stopFlash();
+    }
+
+    if(timeLeft <= 5 && timeLeft > 0) {
+      playBeep();
+    }
+
     updateDisplay();
   }
 
-  if(timeLeft === 0){
-    // Avanzar automáticamente solo si no es la última fase
-    if(currentPhaseIndex + 1 < phases.length && phases[currentPhaseIndex+1].type !== "descarguen"){
+  // Cuando llega a 0 avanzamos según la regla: si la siguiente fase es "descarguen", la pasamos y detenemos (sin temporizador)
+  if(timeLeft === 0) {
+
+    // Asegurarnos de quitar flash al terminar la fase
+    if(document.body.classList.contains("flash")) stopFlash();
+
+    if(currentPhaseIndex + 1 < phases.length) {
       currentPhaseIndex++;
-      timeLeft = phases[currentPhaseIndex].duration;
-      updateDisplay();
-    } else if(currentPhaseIndex + 1 < phases.length && phases[currentPhaseIndex+1].type === "descarguen") {
-      currentPhaseIndex++;
-      timeLeft = 0;
-      updateDisplay();
-      stopTimer();
+      // Si la nueva fase es "descarguen", mostramos sin temporizador y detenemos
+      if(phases[currentPhaseIndex].type === "descarguen") {
+        timeLeft = 0;
+        updateDisplay();
+        stopTimer();
+      } else {
+        timeLeft = phases[currentPhaseIndex].duration;
+        updateDisplay();
+      }
     } else {
+      // no quedan fases: detener
       stopTimer();
+      updateDisplay();
     }
   }
 }
 
 function startPauseTimer(){
   if(interval === null){
-    interval = setInterval(tick,1000);
+    // iniciar
+    interval = setInterval(tick, 1000);
     isPaused = false;
     startPauseBtn.textContent = "Pausa";
+    // actualizar visual al iniciar
+    updateDisplay();
   } else {
     togglePause();
   }
@@ -149,7 +246,7 @@ function startPauseTimer(){
 
 function togglePause(){
   if(isPaused){
-    interval = setInterval(tick,1000);
+    interval = setInterval(tick, 1000);
     isPaused = false;
     startPauseBtn.textContent = "Pausa";
   } else {
@@ -161,35 +258,46 @@ function togglePause(){
 }
 
 function nextPhase(){
-  clearInterval(interval);
-  interval = null;
-  if(currentPhaseIndex +1 < phases.length){
+  // salto manual a la siguiente fase (detiene temporizador)
+  if(interval){
+    clearInterval(interval);
+    interval = null;
+  }
+  if(currentPhaseIndex + 1 < phases.length){
     currentPhaseIndex++;
     timeLeft = phases[currentPhaseIndex].duration;
-    updateDisplay();
     isPaused = true;
     startPauseBtn.textContent = "Iniciar";
+    // quitar flash si hubiera
+    if(document.body.classList.contains("flash")) stopFlash();
+    updateDisplay();
   }
 }
 
 function resetTimer(){
-  clearInterval(interval);
-  interval = null;
+  if(interval){
+    clearInterval(interval);
+    interval = null;
+  }
   currentPhaseIndex = 0;
   timeLeft = phases[0].duration;
   isPaused = true;
   startPauseBtn.textContent = "Iniciar";
+  if(document.body.classList.contains("flash")) stopFlash();
   updateDisplay();
 }
 
 function stopTimer(){
-  clearInterval(interval);
-  interval = null;
+  if(interval){
+    clearInterval(interval);
+    interval = null;
+  }
   isPaused = true;
   startPauseBtn.textContent = "Iniciar";
+  if(document.body.classList.contains("flash")) stopFlash();
 }
 
-// Inicializa
+// Inicializa display
 updateDisplay();
 </script>
 
