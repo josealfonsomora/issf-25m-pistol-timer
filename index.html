@@ -2,19 +2,22 @@
 <html lang="es">
 <head>
 <meta charset="UTF-8" />
-<title>Timer Pistola Estándar con Pitidos Finales</title>
+<title>Timer 20m Pistola Standard</title>
 <style>
-  body { font-family: Arial, sans-serif; text-align: center; margin-top: 50px; transition: background-color 0.5s, color 0.5s;}
+  body { font-family: Arial, sans-serif; text-align: center; margin-top: 20px; transition: background-color 0.5s, color 0.5s; }
   #timer { font-size: 96px; font-weight: bold; margin-bottom: 20px; }
   #phase { font-size: 32px; font-weight: bold; margin-bottom: 10px; }
   #order { font-size: 48px; font-weight: bold; margin-bottom: 30px; min-height: 70px; }
   #nextPhaseSection { font-size: 28px; color: orange; margin-bottom: 30px; }
   button { font-size: 24px; padding: 10px 20px; margin: 10px 10px 0 10px; cursor: pointer; }
+  img#logo { max-height: 100px; display: block; margin: 0 auto 20px; }
   body.carguen { background-color: #b30000; color: white; }
   body.tiempo { background-color: #004d00; color: white; }
 </style>
 </head>
 <body class="carguen">
+
+<img id="logo" src="logo.jpg" alt="Logo">
 
 <div id="phase">Preparado para iniciar</div>
 <div id="timer">00:00</div>
@@ -28,35 +31,35 @@
 </div>
 
 <script>
-// Secuencia de fases
+// Secuencia de fases actualizada
 const phases = [
-  {name: "Carguen", type:"carguen", duration:40},
+  {name: "Carguen", type:"carguen", duration:60},
   {name: "Ronda A - 1", type:"tiro", duration:150},
-  {name: "Carguen", type:"carguen", duration:40},
+  {name: "Carguen", type:"carguen", duration:60},
   {name: "Ronda A - 2", type:"tiro", duration:150},
-  {name: "Carguen", type:"carguen", duration:40},
+  {name: "Carguen", type:"carguen", duration:60},
   {name: "Ronda A - 3", type:"tiro", duration:150},
-  {name: "Carguen", type:"carguen", duration:40},
+  {name: "Carguen", type:"carguen", duration:60},
   {name: "Ronda A - 4", type:"tiro", duration:150},
-  {name: "Carguen", type:"carguen", duration:40},
+  {name: "Carguen", type:"carguen", duration:60},
 
   {name: "Ronda B - 1", type:"tiro", duration:20},
-  {name: "Carguen", type:"carguen", duration:40},
+  {name: "Carguen", type:"carguen", duration:60},
   {name: "Ronda B - 2", type:"tiro", duration:20},
-  {name: "Carguen", type:"carguen", duration:40},
+  {name: "Carguen", type:"carguen", duration:60},
   {name: "Ronda B - 3", type:"tiro", duration:20},
-  {name: "Carguen", type:"carguen", duration:40},
+  {name: "Carguen", type:"carguen", duration:60},
   {name: "Ronda B - 4", type:"tiro", duration:20},
-  {name: "Carguen", type:"carguen", duration:40},
+  {name: "Carguen", type:"carguen", duration:60},
 
   {name: "Ronda C - 1", type:"tiro", duration:10},
-  {name: "Carguen", type:"carguen", duration:40},
+  {name: "Carguen", type:"carguen", duration:60},
   {name: "Ronda C - 2", type:"tiro", duration:10},
-  {name: "Carguen", type:"carguen", duration:40},
+  {name: "Carguen", type:"carguen", duration:60},
   {name: "Ronda C - 3", type:"tiro", duration:10},
-  {name: "Carguen", type:"carguen", duration:40},
+  {name: "Carguen", type:"carguen", duration:60},
   {name: "Ronda C - 4", type:"tiro", duration:10},
-  {name: "Carguen", type:"carguen", duration:40},
+  {name: "Descarguen", type:"descarguen", duration:0} // última fase, sin temporizador
 ];
 
 let currentPhaseIndex = 0;
@@ -78,7 +81,13 @@ function playBeep() {
 }
 
 function setBodyClass() {
-  document.body.className = phases[currentPhaseIndex].type === "carguen" ? "carguen" : "tiempo";
+  if(phases[currentPhaseIndex].type === "carguen") {
+    document.body.className = "carguen";
+  } else if(phases[currentPhaseIndex].type === "tiro") {
+    document.body.className = "tiempo";
+  } else {
+    document.body.className = "";
+  }
 }
 
 function formatTime(seconds) {
@@ -89,16 +98,18 @@ function formatTime(seconds) {
 
 function updateDisplay() {
   phaseEl.textContent = phases[currentPhaseIndex].name;
-  orderEl.textContent = phases[currentPhaseIndex].type === "carguen" ? "Carguen" : `Tiempo de tiro: ${formatTime(timeLeft)}`;
-  
+  // Solo mostrar "Carguen" en #order, no mostrar "Tiempo de tiro"
+  orderEl.textContent = phases[currentPhaseIndex].type === "carguen" ? "Carguen" : "--";
+
   if(currentPhaseIndex + 1 < phases.length){
     let nextPhase = phases[currentPhaseIndex+1];
     nextPhaseEl.textContent = `Siguiente ronda: ${nextPhase.type === "carguen" ? "Carguen" : nextPhase.name}`;
+    nextPhaseEl.style.color = "orange";
   } else {
     nextPhaseEl.textContent = "Siguiente ronda: --";
   }
 
-  timerEl.textContent = formatTime(timeLeft);
+  timerEl.textContent = (phases[currentPhaseIndex].type === "descarguen") ? "" : formatTime(timeLeft);
   setBodyClass();
 }
 
@@ -110,16 +121,18 @@ function tick() {
   }
 
   if(timeLeft === 0){
-    // Pasar automáticamente a la siguiente fase
-    if(currentPhaseIndex + 1 < phases.length){
+    // Avanzar automáticamente solo si no es la última fase
+    if(currentPhaseIndex + 1 < phases.length && phases[currentPhaseIndex+1].type !== "descarguen"){
       currentPhaseIndex++;
       timeLeft = phases[currentPhaseIndex].duration;
       updateDisplay();
-    } else {
-      // Final de la secuencia
+    } else if(currentPhaseIndex + 1 < phases.length && phases[currentPhaseIndex+1].type === "descarguen") {
+      currentPhaseIndex++;
+      timeLeft = 0;
+      updateDisplay();
       stopTimer();
-      orderEl.textContent = "¡Relevo finalizado!";
-      nextPhaseEl.textContent = "Siguiente ronda: --";
+    } else {
+      stopTimer();
     }
   }
 }
