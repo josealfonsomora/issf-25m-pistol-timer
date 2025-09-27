@@ -28,7 +28,7 @@
 </div>
 
 <script>
-// Construcción del orden pedido: fases carguen y tiro alternadas
+// Secuencia de fases
 const phases = [
   {name: "Carguen", type:"carguen", duration:40},
   {name: "Ronda A - 1", type:"tiro", duration:150},
@@ -60,9 +60,9 @@ const phases = [
 ];
 
 let currentPhaseIndex = 0;
-let timeLeft = 0;
+let timeLeft = phases[0].duration;
 let interval = null;
-let isPaused = false;
+let isPaused = true;
 
 const phaseEl = document.getElementById("phase");
 const timerEl = document.getElementById("timer");
@@ -70,7 +70,6 @@ const orderEl = document.getElementById("order");
 const nextPhaseEl = document.getElementById("nextPhaseSection");
 const startPauseBtn = document.getElementById("startPauseBtn");
 
-// Sonido de pitido para los últimos 5 segundos
 const beepSound = new Audio("https://actions.google.com/sounds/v1/alarms/beep_short.ogg");
 
 function playBeep() {
@@ -79,29 +78,22 @@ function playBeep() {
 }
 
 function setBodyClass() {
-  if(phases[currentPhaseIndex].type === "carguen") {
-    document.body.className = "carguen";
-  } else {
-    document.body.className = "tiempo";
-  }
+  document.body.className = phases[currentPhaseIndex].type === "carguen" ? "carguen" : "tiempo";
+}
+
+function formatTime(seconds) {
+  let min = Math.floor(seconds / 60);
+  let sec = seconds % 60;
+  return (min < 10 ? "0"+min : min) + ":" + (sec < 10 ? "0"+sec : sec);
 }
 
 function updateDisplay() {
   phaseEl.textContent = phases[currentPhaseIndex].name;
-  if(timeLeft === 0) {
-    timeLeft = phases[currentPhaseIndex].duration;
-  }
-
-  if(phases[currentPhaseIndex].type === "carguen") {
-    orderEl.textContent = "Carguen";
-  } else {
-    orderEl.textContent = `Tiempo de tiro: ${formatTime(timeLeft)}`;
-  }
-
-  if(currentPhaseIndex +1 < phases.length) {
-    let nextPhase = phases[currentPhaseIndex + 1];
-    let nextText = (nextPhase.type === "carguen") ? "Carguen" : nextPhase.name;
-    nextPhaseEl.textContent = `Siguiente ronda: ${nextText}`;
+  orderEl.textContent = phases[currentPhaseIndex].type === "carguen" ? "Carguen" : `Tiempo de tiro: ${formatTime(timeLeft)}`;
+  
+  if(currentPhaseIndex + 1 < phases.length){
+    let nextPhase = phases[currentPhaseIndex+1];
+    nextPhaseEl.textContent = `Siguiente ronda: ${nextPhase.type === "carguen" ? "Carguen" : nextPhase.name}`;
   } else {
     nextPhaseEl.textContent = "Siguiente ronda: --";
   }
@@ -110,30 +102,21 @@ function updateDisplay() {
   setBodyClass();
 }
 
-function formatTime(seconds) {
-  let min = Math.floor(seconds/60);
-  let sec = seconds % 60;
-  return (min < 10 ? "0" + min : min) + ":" + (sec < 10 ? "0" + sec : sec);
-}
-
 function tick() {
-  if(timeLeft > 0) {
+  if(timeLeft > 0){
     timeLeft--;
+    if(timeLeft <= 5) playBeep();
     updateDisplay();
-
-    if(timeLeft <= 5) {
-      playBeep();
-    }
   }
 
-  if(timeLeft === 0) {
-    // Avanzar automáticamente a la siguiente fase
-    if(currentPhaseIndex + 1 < phases.length) {
+  if(timeLeft === 0){
+    // Pasar automáticamente a la siguiente fase
+    if(currentPhaseIndex + 1 < phases.length){
       currentPhaseIndex++;
       timeLeft = phases[currentPhaseIndex].duration;
       updateDisplay();
     } else {
-      // No quedan fases
+      // Final de la secuencia
       stopTimer();
       orderEl.textContent = "¡Relevo finalizado!";
       nextPhaseEl.textContent = "Siguiente ronda: --";
@@ -141,26 +124,19 @@ function tick() {
   }
 }
 
-function startPauseTimer() {
-  if(interval === null) {
-    if(currentPhaseIndex >= phases.length) {
-      resetTimer();
-    }
-    if(timeLeft === 0) {
-      timeLeft = phases[currentPhaseIndex].duration;
-    }
-    interval = setInterval(tick, 1000);
+function startPauseTimer(){
+  if(interval === null){
+    interval = setInterval(tick,1000);
     isPaused = false;
     startPauseBtn.textContent = "Pausa";
-    updateDisplay();
   } else {
     togglePause();
   }
 }
 
-function togglePause() {
-  if(isPaused) {
-    interval = setInterval(tick, 1000);
+function togglePause(){
+  if(isPaused){
+    interval = setInterval(tick,1000);
     isPaused = false;
     startPauseBtn.textContent = "Pausa";
   } else {
@@ -171,26 +147,21 @@ function togglePause() {
   }
 }
 
-function nextPhase() {
-  if(interval) {
-    clearInterval(interval);
-    interval = null;
-  }
-
-  if(currentPhaseIndex + 1 < phases.length) {
+function nextPhase(){
+  clearInterval(interval);
+  interval = null;
+  if(currentPhaseIndex +1 < phases.length){
     currentPhaseIndex++;
     timeLeft = phases[currentPhaseIndex].duration;
+    updateDisplay();
+    isPaused = true;
+    startPauseBtn.textContent = "Iniciar";
   }
-  isPaused = true;
-  startPauseBtn.textContent = "Iniciar";
-  updateDisplay();
 }
 
-function resetTimer() {
-  if(interval) {
-    clearInterval(interval);
-    interval = null;
-  }
+function resetTimer(){
+  clearInterval(interval);
+  interval = null;
   currentPhaseIndex = 0;
   timeLeft = phases[0].duration;
   isPaused = true;
@@ -198,16 +169,15 @@ function resetTimer() {
   updateDisplay();
 }
 
-function stopTimer() {
-  if(interval) {
-    clearInterval(interval);
-    interval = null;
-  }
+function stopTimer(){
+  clearInterval(interval);
+  interval = null;
   isPaused = true;
   startPauseBtn.textContent = "Iniciar";
 }
 
-resetTimer();
+// Inicializa
+updateDisplay();
 </script>
 
 </body>
