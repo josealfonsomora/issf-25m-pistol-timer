@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8" />
+<title>Timer Pistola Estándar Modificado</title>
+<style>
+  body { font-family: Arial, sans-serif; text-align: center; margin-top: 50px; }
+  #timer { font-size: 96px; font-weight: bold; margin-bottom: 20px; }
+  #phase { font-size: 36px; font-weight: bold; margin-bottom: 10px; }
+  #nextPhase { font-size: 24px; color: #555; margin-bottom: 30px; }
+  button { font-size: 24px; padding: 10px 20px; }
+</style>
+</head>
+<body>
+
+<div id="phase">Preparado para iniciar</div>
+<div id="timer">00:00</div>
+<div id="nextPhase">Siguiente: --</div>
+<button onclick="startTimer()">Iniciar</button>
+
+<script>
+let rounds = [
+  {name: "Ronda 1: 150 segundos", duration: 150},
+  {name: "Descanso 1: 60 segundos", duration: 60},
+  {name: "Ronda 2: 150 segundos", duration: 150},
+  {name: "Descanso 2: 60 segundos", duration: 60},
+  {name: "Ronda 3: 150 segundos", duration: 150},
+  {name: "Descanso 3: 60 segundos", duration: 60},
+  {name: "Ronda 4: 150 segundos", duration: 150},
+  {name: "Descanso 4: 60 segundos", duration: 60},
+  {name: "Ronda 5: 20 segundos", duration: 20},
+  {name: "Descanso 5: 60 segundos", duration: 60},
+  {name: "Ronda 6: 20 segundos", duration: 20},
+  {name: "Descanso 6: 60 segundos", duration: 60},
+  {name: "Ronda 7: 20 segundos", duration: 20},
+  {name: "Descanso 7: 60 segundos", duration: 60},
+  {name: "Ronda 8: 20 segundos", duration: 20},
+  {name: "Descanso 8: 60 segundos", duration: 60},
+  {name: "Ronda 9: 10 segundos", duration: 10},
+  {name: "Descanso 9: 60 segundos", duration: 60},
+  {name: "Ronda 10: 10 segundos", duration: 10},
+  {name: "Descanso 10: 60 segundos", duration: 60},
+  {name: "Ronda 11: 10 segundos", duration: 10}
+];
+
+let currentPhase = 0;
+let timerInterval;
+
+function startTimer() {
+  if(timerInterval) return; // evitar múltiples inicios
+  nextPhase();
+}
+
+function nextPhase() {
+  if (currentPhase >= rounds.length) {
+    document.getElementById("phase").textContent = "Entrenamiento completado";
+    document.getElementById("timer").textContent = "00:00";
+    document.getElementById("nextPhase").textContent = "Siguiente: --";
+    timerInterval = null;
+    return;
+  }
+  let phase = rounds[currentPhase];
+  let nextPhaseName = currentPhase + 1 < rounds.length ? rounds[currentPhase + 1].name : "--";
+  let timeLeft = phase.duration;
+  document.getElementById("phase").textContent = phase.name;
+  document.getElementById("nextPhase").textContent = "Siguiente: " + nextPhaseName;
+  updateTimerDisplay(timeLeft);
+
+  timerInterval = setInterval(() => {
+    timeLeft--;
+    updateTimerDisplay(timeLeft);
+    if(timeLeft <= 0) {
+      clearInterval(timerInterval);
+      timerInterval = null;
+      currentPhase++;
+      setTimeout(nextPhase, 1000);
+    }
+  }, 1000);
+}
+
+function updateTimerDisplay(seconds) {
+  let min = Math.floor(seconds / 60);
+  let sec = seconds % 60;
+  document.getElementById("timer").textContent = 
+    (min < 10 ? "0" + min : min) + ":" + (sec < 10 ? "0" + sec : sec);
+}
+</script>
+
+</body>
+</html>
