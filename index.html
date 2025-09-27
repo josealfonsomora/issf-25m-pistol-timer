@@ -2,20 +2,19 @@
 <html lang="es">
 <head>
 <meta charset="UTF-8" />
-<title>Timer Pistola Estándar Órdenes Simplificadas</title>
+<title>Timer Pistola Estándar Orden Exacto</title>
 <style>
-  body { font-family: Arial, sans-serif; text-align: center; margin-top: 50px; transition: background-color 0.5s, color 0.5s; }
+  body { font-family: Arial, sans-serif; text-align: center; margin-top: 50px; transition: background-color 0.5s, color 0.5s;}
   #timer { font-size: 96px; font-weight: bold; margin-bottom: 20px; }
   #phase { font-size: 32px; font-weight: bold; margin-bottom: 10px; }
   #order { font-size: 48px; font-weight: bold; margin-bottom: 30px; min-height: 70px; }
   #nextPhaseSection { font-size: 28px; color: orange; margin-bottom: 30px; }
   button { font-size: 24px; padding: 10px 20px; margin: 10px 10px 0 10px; cursor: pointer; }
-  body.carguen, body.descarguen { background-color: #b30000; color: white; }
+  body.carguen { background-color: #b30000; color: white; }
   body.tiempo { background-color: #004d00; color: white; }
-  #buttons { margin-top: 20px; }
 </style>
 </head>
-<body class="descarguen">
+<body class="carguen">
 
 <div id="phase">Preparado para iniciar</div>
 <div id="timer">00:00</div>
@@ -24,34 +23,43 @@
 
 <div id="buttons">
   <button id="startPauseBtn" onclick="startPauseTimer()">Iniciar</button>
-  <button onclick="nextRound()">Siguiente ronda</button>
+  <button onclick="nextPhase()">Siguiente ronda</button>
   <button onclick="resetTimer()">Reiniciar</button>
 </div>
 
 <script>
-// Definición de fases, nombrando solo fases carguen, tiros y descarguen
-// Cada ronda consta de tres subfases consecutivas.
-const rounds = [
-  {name: "Ronda 1", shootTime:150},
-  {name: "Ronda 2", shootTime:150},
-  {name: "Ronda 3", shootTime:150},
-  {name: "Ronda 4", shootTime:150},
+// Construcción del orden pedido: fases carguen y tiro alternadas
+const phases = [
+  {name: "Carguen", type:"carguen", duration:40},
+  {name: "Ronda A - 1", type:"tiro", duration:150},
+  {name: "Carguen", type:"carguen", duration:40},
+  {name: "Ronda A - 2", type:"tiro", duration:150},
+  {name: "Carguen", type:"carguen", duration:40},
+  {name: "Ronda A - 3", type:"tiro", duration:150},
+  {name: "Carguen", type:"carguen", duration:40},
+  {name: "Ronda A - 4", type:"tiro", duration:150},
+  {name: "Carguen", type:"carguen", duration:40},
 
-  {name: "Ronda 5", shootTime:20},
-  {name: "Ronda 6", shootTime:20},
-  {name: "Ronda 7", shootTime:20},
-  {name: "Ronda 8", shootTime:20},
+  {name: "Ronda B - 1", type:"tiro", duration:20},
+  {name: "Carguen", type:"carguen", duration:40},
+  {name: "Ronda B - 2", type:"tiro", duration:20},
+  {name: "Carguen", type:"carguen", duration:40},
+  {name: "Ronda B - 3", type:"tiro", duration:20},
+  {name: "Carguen", type:"carguen", duration:40},
+  {name: "Ronda B - 4", type:"tiro", duration:20},
+  {name: "Carguen", type:"carguen", duration:40},
 
-  {name: "Ronda 9", shootTime:10},
-  {name: "Ronda 10", shootTime:10},
-  {name: "Ronda 11", shootTime:10}
+  {name: "Ronda C - 1", type:"tiro", duration:10},
+  {name: "Carguen", type:"carguen", duration:40},
+  {name: "Ronda C - 2", type:"tiro", duration:10},
+  {name: "Carguen", type:"carguen", duration:40},
+  {name: "Ronda C - 3", type:"tiro", duration:10},
+  {name: "Carguen", type:"carguen", duration:40},
+  {name: "Ronda C - 4", type:"tiro", duration:10},
+  {name: "Carguen", type:"carguen", duration:40},
 ];
 
-const carguenDuration = 40; // segundos
-const descarguenDuration = 20;
-
-let currentRoundIndex = 0;
-let subPhase = "carguen"; // carguen, tiro, descarguen
+let currentPhaseIndex = 0;
 let timeLeft = 0;
 let interval = null;
 let isPaused = false;
@@ -63,35 +71,28 @@ const nextPhaseEl = document.getElementById("nextPhaseSection");
 const startPauseBtn = document.getElementById("startPauseBtn");
 
 function setBodyClass() {
-  if(subPhase === "carguen" || subPhase === "descarguen") {
-    document.body.className = 'carguen';
-  } else if(subPhase === "tiro") {
-    document.body.className = 'tiempo';
+  if(phases[currentPhaseIndex].type === "carguen") {
+    document.body.className = "carguen";
+  } else {
+    document.body.className = "tiempo";
   }
 }
 
 function updateDisplay() {
-  let roundName = rounds[currentRoundIndex] ? rounds[currentRoundIndex].name : "--";
-  let shootTime = rounds[currentRoundIndex] ? rounds[currentRoundIndex].shootTime : 0;
+  phaseEl.textContent = phases[currentPhaseIndex].name;
+  timeLeft = timeLeft === 0 ? phases[currentPhaseIndex].duration : timeLeft;
 
-  switch(subPhase) {
-    case "carguen":
-      phaseEl.textContent = roundName;
-      orderEl.textContent = "Carguen";
-      break;
-    case "tiro":
-      phaseEl.textContent = roundName;
-      orderEl.textContent = `Tiempo de tiro: ${formatTime(shootTime)}`;
-      break;
-    case "descarguen":
-      phaseEl.textContent = roundName;
-      orderEl.textContent = "Descarguen";
-      break;
+  if(phases[currentPhaseIndex].type === "carguen") {
+    orderEl.textContent = "Carguen";
+  } else { // tipo tiro
+    orderEl.textContent = `Tiempo de tiro: ${formatTime(timeLeft)}`;
   }
 
-  // Siguiente ronda (solo nombre de la ronda siguiente)
-  if(currentRoundIndex + 1 < rounds.length) {
-    nextPhaseEl.textContent = "Siguiente ronda: " + rounds[currentRoundIndex + 1].name;
+  // Siguiente ronda o etapa
+  if(currentPhaseIndex +1 < phases.length) {
+    let nextPhase = phases[currentPhaseIndex + 1];
+    let nextText = (nextPhase.type === "carguen") ? "Carguen" : nextPhase.name;
+    nextPhaseEl.textContent = `Siguiente ronda: ${nextText}`;
   } else {
     nextPhaseEl.textContent = "Siguiente ronda: --";
   }
@@ -102,63 +103,29 @@ function updateDisplay() {
 
 function formatTime(seconds) {
   let min = Math.floor(seconds/60);
-  let sec = seconds % 60;
-  return (min<10 ? "0"+min : min) + ":" + (sec<10 ? "0"+sec : sec);
+  let sec = seconds%60;
+  return (min<10?"0"+min:min) + ":" + (sec<10?"0"+sec:sec);
 }
 
 function tick() {
   if(timeLeft > 0) {
     timeLeft--;
     updateDisplay();
-
-    if(timeLeft <= 5 && subPhase === "tiro") {
+    if(phases[currentPhaseIndex].type === "tiro" && timeLeft <= 5) {
       playTickSound();
     }
+  } else {
+    nextPhase();
   }
-  if(timeLeft === 0) {
-    nextSubPhase();
-  }
-}
-
-function nextSubPhase() {
-  switch(subPhase) {
-    case "carguen":
-      subPhase = "tiro";
-      timeLeft = rounds[currentRoundIndex].shootTime;
-      playStartShootSound();
-      break;
-    case "tiro":
-      subPhase = "descarguen";
-      timeLeft = descarguenDuration;
-      playStopSound();
-      break;
-    case "descarguen":
-      currentRoundIndex++;
-      if(currentRoundIndex >= rounds.length) {
-        stopTimer();
-        phaseEl.textContent = "Entrenamiento completado";
-        orderEl.textContent = "--";
-        nextPhaseEl.textContent = "--";
-        startPauseBtn.textContent = "Reiniciar";
-        return;
-      }
-      subPhase = "carguen";
-      timeLeft = carguenDuration;
-      playLoadSound();
-      break;
-  }
-  updateDisplay();
 }
 
 function startPauseTimer() {
   if(interval === null) {
-    if(currentRoundIndex >= rounds.length) {
+    if(currentPhaseIndex >= phases.length) {
       resetTimer();
     }
     if(timeLeft === 0) {
-      subPhase = "carguen";
-      timeLeft = carguenDuration;
-      playLoadSound();
+      timeLeft = phases[currentPhaseIndex].duration;
     }
     interval = setInterval(tick, 1000);
     isPaused = false;
@@ -182,30 +149,39 @@ function togglePause() {
   }
 }
 
-function nextRound() {
-  if(interval !== null) {
+// Función para avanzar según estado del botón "Siguiente ronda"
+function nextPhase() {
+  if(interval) {
     clearInterval(interval);
-    interval = null;
+    interval=null;
   }
-  currentRoundIndex++;
-  if(currentRoundIndex >= rounds.length) {
-    currentRoundIndex = rounds.length - 1;
+
+  // Si estamos en fase TIRO, siguiente fase será CARGUEN mismo índice o siguiente ronda
+  if(phases[currentPhaseIndex].type === "tiro") {
+    if(currentPhaseIndex + 1 < phases.length) {
+      currentPhaseIndex++;
+      timeLeft = phases[currentPhaseIndex].duration;
+    }
+  } else {
+    // Si estamos en CARGUEN, saltamos a siguiente fase (de tiro)
+    // Asumimos que siempre después de CARGUEN viene fase tiro salvo final
+    if(currentPhaseIndex + 1 < phases.length) {
+      currentPhaseIndex++;
+      timeLeft = phases[currentPhaseIndex].duration;
+    }
   }
-  subPhase = "carguen";
-  timeLeft = carguenDuration;
   isPaused = true;
   startPauseBtn.textContent = "Iniciar";
   updateDisplay();
 }
 
 function resetTimer() {
-  if(interval !== null) {
+  if(interval) {
     clearInterval(interval);
     interval = null;
   }
-  currentRoundIndex = 0;
-  subPhase = "carguen";
-  timeLeft = carguenDuration;
+  currentPhaseIndex = 0;
+  timeLeft = phases[0].duration;
   isPaused = true;
   startPauseBtn.textContent = "Iniciar";
   updateDisplay();
@@ -213,28 +189,10 @@ function resetTimer() {
 
 // Sonidos
 const tickSound = new Audio("https://actions.google.com/sounds/v1/alarms/beep_short.ogg");
-const loadSound = new Audio("https://actions.google.com/sounds/v1/alarms/beep_short.ogg");
-const stopSound = new Audio("https://actions.google.com/sounds/v1/alarms/warning_alarm.ogg");
-const shootStartSound = new Audio("https://actions.google.com/sounds/v1/alarms/digital_watch_alarm_long.ogg");
 
 function playTickSound() {
   tickSound.currentTime = 0;
   tickSound.play();
-}
-
-function playLoadSound() {
-  loadSound.currentTime = 0;
-  loadSound.play();
-}
-
-function playStopSound() {
-  stopSound.currentTime = 0;
-  stopSound.play();
-}
-
-function playStartShootSound() {
-  shootStartSound.currentTime = 0;
-  shootStartSound.play();
 }
 
 resetTimer();
