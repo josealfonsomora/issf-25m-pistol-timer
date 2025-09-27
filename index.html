@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
 <meta charset="UTF-8" />
-<title>Timer Pistola Estándar Orden Exacto</title>
+<title>Timer Pistola Estándar con Pitidos Finales</title>
 <style>
   body { font-family: Arial, sans-serif; text-align: center; margin-top: 50px; transition: background-color 0.5s, color 0.5s;}
   #timer { font-size: 96px; font-weight: bold; margin-bottom: 20px; }
@@ -70,6 +70,14 @@ const orderEl = document.getElementById("order");
 const nextPhaseEl = document.getElementById("nextPhaseSection");
 const startPauseBtn = document.getElementById("startPauseBtn");
 
+// Sonido de pitido para los últimos 5 segundos
+const beepSound = new Audio("https://actions.google.com/sounds/v1/alarms/beep_short.ogg");
+
+function playBeep() {
+  beepSound.currentTime = 0;
+  beepSound.play();
+}
+
 function setBodyClass() {
   if(phases[currentPhaseIndex].type === "carguen") {
     document.body.className = "carguen";
@@ -80,15 +88,16 @@ function setBodyClass() {
 
 function updateDisplay() {
   phaseEl.textContent = phases[currentPhaseIndex].name;
-  timeLeft = timeLeft === 0 ? phases[currentPhaseIndex].duration : timeLeft;
+  if(timeLeft === 0) {
+    timeLeft = phases[currentPhaseIndex].duration;
+  }
 
   if(phases[currentPhaseIndex].type === "carguen") {
     orderEl.textContent = "Carguen";
-  } else { // tipo tiro
+  } else {
     orderEl.textContent = `Tiempo de tiro: ${formatTime(timeLeft)}`;
   }
 
-  // Siguiente ronda o etapa
   if(currentPhaseIndex +1 < phases.length) {
     let nextPhase = phases[currentPhaseIndex + 1];
     let nextText = (nextPhase.type === "carguen") ? "Carguen" : nextPhase.name;
@@ -103,19 +112,33 @@ function updateDisplay() {
 
 function formatTime(seconds) {
   let min = Math.floor(seconds/60);
-  let sec = seconds%60;
-  return (min<10?"0"+min:min) + ":" + (sec<10?"0"+sec:sec);
+  let sec = seconds % 60;
+  return (min < 10 ? "0" + min : min) + ":" + (sec < 10 ? "0" + sec : sec);
 }
 
 function tick() {
   if(timeLeft > 0) {
     timeLeft--;
     updateDisplay();
-    if(phases[currentPhaseIndex].type === "tiro" && timeLeft <= 5) {
-      playTickSound();
+
+    if(timeLeft <= 5) {
+      playBeep();
     }
-  } else {
-    nextPhase();
+  }
+  if(timeLeft === 0) {
+    if(phases[currentPhaseIndex].type === "carguen") {
+      // Al acabar "Carguen", avanzar automáticamente a la siguiente fase (tiro)
+      if(currentPhaseIndex + 1 < phases.length) {
+        currentPhaseIndex++;
+        timeLeft = phases[currentPhaseIndex].duration;
+        updateDisplay();
+      } else {
+        stopTimer();
+      }
+    } else {
+      // En tiro, avanzar a siguiente fase parando el timer para el usuario
+      stopTimer();
+    }
   }
 }
 
@@ -149,22 +172,20 @@ function togglePause() {
   }
 }
 
-// Función para avanzar según estado del botón "Siguiente ronda"
 function nextPhase() {
   if(interval) {
     clearInterval(interval);
-    interval=null;
+    interval = null;
   }
 
-  // Si estamos en fase TIRO, siguiente fase será CARGUEN mismo índice o siguiente ronda
   if(phases[currentPhaseIndex].type === "tiro") {
+    // Si estamos en tiro saltamos a siguiente carguen o tiro siguiente
     if(currentPhaseIndex + 1 < phases.length) {
       currentPhaseIndex++;
       timeLeft = phases[currentPhaseIndex].duration;
     }
   } else {
-    // Si estamos en CARGUEN, saltamos a siguiente fase (de tiro)
-    // Asumimos que siempre después de CARGUEN viene fase tiro salvo final
+    // Si estamos en carguen saltamos a tiro siguiente
     if(currentPhaseIndex + 1 < phases.length) {
       currentPhaseIndex++;
       timeLeft = phases[currentPhaseIndex].duration;
@@ -187,12 +208,13 @@ function resetTimer() {
   updateDisplay();
 }
 
-// Sonidos
-const tickSound = new Audio("https://actions.google.com/sounds/v1/alarms/beep_short.ogg");
-
-function playTickSound() {
-  tickSound.currentTime = 0;
-  tickSound.play();
+function stopTimer() {
+  if(interval) {
+    clearInterval(interval);
+    interval = null;
+  }
+  isPaused = true;
+  startPauseBtn.textContent = "Iniciar";
 }
 
 resetTimer();
