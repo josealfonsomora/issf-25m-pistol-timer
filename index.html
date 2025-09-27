@@ -1,7 +1,84 @@
-<!-- ...el resto del HTML y CSS sigue igual hasta el script ... -->
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Timer 20m Pistola Standard</title>
+<style>
+:root{
+  --carguen-bg: #b30000;
+  --tiro-bg: #004d00;
+  --text-on-dark: #ffffff;
+}
+
+body {
+  font-family: Arial, sans-serif;
+  text-align: center;
+  margin: 0;
+  padding: 1rem;
+  transition: background-color 0.25s, color 0.25s;
+  background-color: var(--carguen-bg);
+  color: var(--text-on-dark);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+#logo { max-width: 80%; height: auto; margin-bottom: 1rem; }
+
+#phase { font-size: 6vw; font-weight: bold; margin-bottom: 0.5rem; }
+#timer { font-size: 20vw; font-weight: bold; margin-bottom: 1rem; }
+#order { font-size: 8vw; font-weight: bold; margin-bottom: 1rem; min-height: 8vw; }
+#nextPhaseSection { font-size: 5vw; color: orange; margin-bottom: 1rem; }
+
+button {
+  font-size: 5vw;
+  padding: 1rem;
+  margin: 0.5rem 0;
+  cursor: pointer;
+  width: 80%;
+  max-width: 300px;
+}
+
+/* Estados base */
+body.carguen { background-color: var(--carguen-bg); color: var(--text-on-dark); }
+body.tiempo  { background-color: var(--tiro-bg); color: var(--text-on-dark); }
+body.neutral { background-color: #222; color: var(--text-on-dark); }
+
+/* Efecto flash */
+.flash {
+  animation: flash-bg 1s linear;
+}
+
+@keyframes flash-bg {
+  0%   { background-color: #fffae6; color: #000; }
+  25%  { background-color: #ffd4d4; color: #000; }
+  50%  { background-color: #d6ffd6; color: #000; }
+  75%  { background-color: #d6e0ff; color: #000; }
+  100% { background-color: #fff2d6; color: #000; }
+}
+
+.flash #timer,
+.flash #phase,
+.flash #order { text-shadow: 0 0 6px rgba(0,0,0,0.6); }
+</style>
+</head>
+<body class="carguen">
+
+<img id="logo" src="logo.jpg" alt="Logo">
+
+<div id="phase">Preparado para iniciar</div>
+<div id="timer">00:00</div>
+<div id="order">--</div>
+<div id="nextPhaseSection">Siguiente ronda: --</div>
+
+<div id="buttons">
+  <button id="startPauseBtn" onclick="startPauseTimer()">Iniciar</button>
+  <button onclick="nextPhase()">Siguiente ronda</button>
+  <button onclick="resetTimer()">Reiniciar</button>
+</div>
 
 <script>
-// Secuencia de fases
 const phases = [
   {name: "Carguen", type:"carguen", duration:60},
   {name: "Ronda A - 1", type:"tiro", duration:150},
@@ -85,7 +162,7 @@ function updateDisplay() {
 
 function flashOnce() {
   document.body.classList.add("flash");
-  setTimeout(()=>document.body.classList.remove("flash"), 1000); // dura 1 segundo
+  setTimeout(()=>document.body.classList.remove("flash"), 1000);
 }
 
 function tick() {
@@ -98,12 +175,11 @@ function tick() {
   if(timeLeft > 0) {
     timeLeft--;
 
-    // Si estamos en carguen y quedan exactamente 5s, hacer flash
     if(phases[currentPhaseIndex].type === "carguen" && timeLeft === 5) {
       flashOnce();
       playBeep();
     } else if(timeLeft <= 5) {
-      playBeep(); // pitidos finales de otras fases también
+      playBeep();
     }
 
     updateDisplay();
@@ -179,3 +255,6 @@ function stopTimer(){
 
 updateDisplay();
 </script>
+
+</body>
+</html>
