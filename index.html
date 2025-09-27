@@ -125,19 +125,18 @@ function tick() {
       playBeep();
     }
   }
+
   if(timeLeft === 0) {
-    if(phases[currentPhaseIndex].type === "carguen") {
-      // Al acabar "Carguen", avanzar automáticamente a la siguiente fase (tiro)
-      if(currentPhaseIndex + 1 < phases.length) {
-        currentPhaseIndex++;
-        timeLeft = phases[currentPhaseIndex].duration;
-        updateDisplay();
-      } else {
-        stopTimer();
-      }
+    // Avanzar automáticamente a la siguiente fase
+    if(currentPhaseIndex + 1 < phases.length) {
+      currentPhaseIndex++;
+      timeLeft = phases[currentPhaseIndex].duration;
+      updateDisplay();
     } else {
-      // En tiro, avanzar a siguiente fase parando el timer para el usuario
+      // No quedan fases
       stopTimer();
+      orderEl.textContent = "¡Relevo finalizado!";
+      nextPhaseEl.textContent = "Siguiente ronda: --";
     }
   }
 }
@@ -178,18 +177,9 @@ function nextPhase() {
     interval = null;
   }
 
-  if(phases[currentPhaseIndex].type === "tiro") {
-    // Si estamos en tiro saltamos a siguiente carguen o tiro siguiente
-    if(currentPhaseIndex + 1 < phases.length) {
-      currentPhaseIndex++;
-      timeLeft = phases[currentPhaseIndex].duration;
-    }
-  } else {
-    // Si estamos en carguen saltamos a tiro siguiente
-    if(currentPhaseIndex + 1 < phases.length) {
-      currentPhaseIndex++;
-      timeLeft = phases[currentPhaseIndex].duration;
-    }
+  if(currentPhaseIndex + 1 < phases.length) {
+    currentPhaseIndex++;
+    timeLeft = phases[currentPhaseIndex].duration;
   }
   isPaused = true;
   startPauseBtn.textContent = "Iniciar";
