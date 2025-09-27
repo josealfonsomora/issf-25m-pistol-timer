@@ -2,17 +2,20 @@
 <html lang="es">
 <head>
 <meta charset="UTF-8" />
-<title>Timer Pistola Estándar con Órdenes y Sonidos</title>
+<title>Timer Pistola Estándar con Fondo de Color</title>
 <style>
-  body { font-family: Arial, sans-serif; text-align: center; margin-top: 50px; }
+  body { font-family: Arial, sans-serif; text-align: center; margin-top: 50px; transition: background-color 0.5s, color 0.5s; }
   #timer { font-size: 96px; font-weight: bold; margin-bottom: 20px; }
   #phase { font-size: 32px; font-weight: bold; margin-bottom: 10px; }
-  #order { font-size: 28px; color: #003366; margin-bottom: 30px; min-height: 60px; }
-  #nextPhaseSection { font-size: 24px; color: #555; margin-bottom: 30px; }
-  button { font-size: 24px; padding: 10px 20px; margin: 0 10px; }
+  #order { font-size: 28px; font-weight: bold; margin-bottom: 30px; min-height: 60px; }
+  #nextPhaseSection { font-size: 24px; color: #ddd; margin-bottom: 30px; }
+  button { font-size: 24px; padding: 10px 20px; margin: 0 10px; cursor: pointer; }
+  body.carguen { background-color: #b30000; color: white; }
+  body.atencion { background-color: #004d00; color: white; }
+  body.descanso { background-color: #222222; color: white; }
 </style>
 </head>
-<body>
+<body class="descanso">
 
 <div id="phase">Preparado para iniciar</div>
 <div id="timer">00:00</div>
@@ -24,49 +27,54 @@
 <button id="startPauseBtn" onclick="startPauseTimer()">Iniciar</button>
 
 <script>
-// Definición de fases y órdenes con tiempos y acciones auditivas a reproducir
+// Fases y órdenes con sus tiempos y tipos para el cambio de fondo
 const phases = [
-  {name: "Fase A - Serie 1 (150 s, 5 disparos)", duration:150, orderStart:"150 SECONDS SERIES — CARGUEN", orderAttention:"ATENCIÓN", orderEnd:"STOP — DESCARGUEN"},
-  {name: "Pausa breve (entre series)", duration: 60, orderStart:"", orderAttention:"", orderEnd:""},
-  {name: "Fase A - Serie 2 (150 s, 5 disparos)", duration:150, orderStart:"150 SECONDS SERIES — CARGUEN", orderAttention:"ATENCIÓN", orderEnd:"STOP — DESCARGUEN"},
-  {name: "Pausa breve (entre series)", duration: 60, orderStart:"", orderAttention:"", orderEnd:""},
-  {name: "Fase A - Serie 3 (150 s, 5 disparos)", duration:150, orderStart:"150 SECONDS SERIES — CARGUEN", orderAttention:"ATENCIÓN", orderEnd:"STOP — DESCARGUEN"},
-  {name: "Pausa breve (entre series)", duration: 60, orderStart:"", orderAttention:"", orderEnd:""},
-  {name: "Fase A - Serie 4 (150 s, 5 disparos)", duration:150, orderStart:"150 SECONDS SERIES — CARGUEN", orderAttention:"ATENCIÓN", orderEnd:"STOP — DESCARGUEN"},
-  {name: "Descanso 1 minuto", duration:60, orderStart:"", orderAttention:"", orderEnd:""},
+  {name: "Fase A - Serie 1 (150 s, 5 disparos)", duration:150, orderStart:"150 SECONDS SERIES — CARGUEN", orderAttention:"ATENCIÓN", orderEnd:"STOP — DESCARGUEN", type:"carguen"},
+  {name: "Pausa breve (entre series)", duration: 60, orderStart:"", orderAttention:"", orderEnd:"", type:"descanso"},
+  {name: "Fase A - Serie 2 (150 s, 5 disparos)", duration:150, orderStart:"150 SECONDS SERIES — CARGUEN", orderAttention:"ATENCIÓN", orderEnd:"STOP — DESCARGUEN", type:"carguen"},
+  {name: "Pausa breve (entre series)", duration: 60, orderStart:"", orderAttention:"", orderEnd:"", type:"descanso"},
+  {name: "Fase A - Serie 3 (150 s, 5 disparos)", duration:150, orderStart:"150 SECONDS SERIES — CARGUEN", orderAttention:"ATENCIÓN", orderEnd:"STOP — DESCARGUEN", type:"carguen"},
+  {name: "Pausa breve (entre series)", duration: 60, orderStart:"", orderAttention:"", orderEnd:"", type:"descanso"},
+  {name: "Fase A - Serie 4 (150 s, 5 disparos)", duration:150, orderStart:"150 SECONDS SERIES — CARGUEN", orderAttention:"ATENCIÓN", orderEnd:"STOP — DESCARGUEN", type:"carguen"},
+  {name: "Descanso 1 minuto", duration:60, orderStart:"", orderAttention:"", orderEnd:"", type:"descanso"},
 
-  {name: "Fase B - Serie 1 (20 s, 5 disparos)", duration:20, orderStart:"20 SECONDS SERIES — CARGUEN", orderAttention:"ATENCIÓN", orderEnd:"STOP — DESCARGUEN"},
-  {name: "Descanso 1 minuto", duration:60, orderStart:"", orderAttention:"", orderEnd:""},
-  {name: "Fase B - Serie 2 (20 s, 5 disparos)", duration:20, orderStart:"20 SECONDS SERIES — CARGUEN", orderAttention:"ATENCIÓN", orderEnd:"STOP — DESCARGUEN"},
-  {name: "Descanso 1 minuto", duration:60, orderStart:"", orderAttention:"", orderEnd:""},
-  {name: "Fase B - Serie 3 (20 s, 5 disparos)", duration:20, orderStart:"20 SECONDS SERIES — CARGUEN", orderAttention:"ATENCIÓN", orderEnd:"STOP — DESCARGUEN"},
-  {name: "Descanso 1 minuto", duration:60, orderStart:"", orderAttention:"", orderEnd:""},
-  {name: "Fase B - Serie 4 (20 s, 5 disparos)", duration:20, orderStart:"20 SECONDS SERIES — CARGUEN", orderAttention:"ATENCIÓN", orderEnd:"STOP — DESCARGUEN"},
-  {name: "Descanso 1 minuto", duration:60, orderStart:"", orderAttention:"", orderEnd:""},
+  {name: "Fase B - Serie 1 (20 s, 5 disparos)", duration:20, orderStart:"20 SECONDS SERIES — CARGUEN", orderAttention:"ATENCIÓN", orderEnd:"STOP — DESCARGUEN", type:"carguen"},
+  {name: "Descanso 1 minuto", duration:60, orderStart:"", orderAttention:"", orderEnd:"", type:"descanso"},
+  {name: "Fase B - Serie 2 (20 s, 5 disparos)", duration:20, orderStart:"20 SECONDS SERIES — CARGUEN", orderAttention:"ATENCIÓN", orderEnd:"STOP — DESCARGUEN", type:"carguen"},
+  {name: "Descanso 1 minuto", duration:60, orderStart:"", orderAttention:"", orderEnd:"", type:"descanso"},
+  {name: "Fase B - Serie 3 (20 s, 5 disparos)", duration:20, orderStart:"20 SECONDS SERIES — CARGUEN", orderAttention:"ATENCIÓN", orderEnd:"STOP — DESCARGUEN", type:"carguen"},
+  {name: "Descanso 1 minuto", duration:60, orderStart:"", orderAttention:"", orderEnd:"", type:"descanso"},
+  {name: "Fase B - Serie 4 (20 s, 5 disparos)", duration:20, orderStart:"20 SECONDS SERIES — CARGUEN", orderAttention:"ATENCIÓN", orderEnd:"STOP — DESCARGUEN", type:"carguen"},
+  {name: "Descanso 1 minuto", duration:60, orderStart:"", orderAttention:"", orderEnd:"", type:"descanso"},
 
-  {name: "Fase C - Serie 1 (10 s, 5 disparos)", duration:10, orderStart:"10 SECONDS SERIES — CARGUEN", orderAttention:"ATENCIÓN", orderEnd:"STOP — DESCARGUEN"},
-  {name: "Descanso 1 minuto", duration:60, orderStart:"", orderAttention:"", orderEnd:""},
-  {name: "Fase C - Serie 2 (10 s, 5 disparos)", duration:10, orderStart:"10 SECONDS SERIES — CARGUEN", orderAttention:"ATENCIÓN", orderEnd:"STOP — DESCARGUEN"},
-  {name: "Descanso 1 minuto", duration:60, orderStart:"", orderAttention:"", orderEnd:""},
-  {name: "Fase C - Serie 3 (10 s, 5 disparos)", duration:10, orderStart:"10 SECONDS SERIES — CARGUEN", orderAttention:"ATENCIÓN", orderEnd:"STOP — DESCARGUEN"},
+  {name: "Fase C - Serie 1 (10 s, 5 disparos)", duration:10, orderStart:"10 SECONDS SERIES — CARGUEN", orderAttention:"ATENCIÓN", orderEnd:"STOP — DESCARGUEN", type:"carguen"},
+  {name: "Descanso 1 minuto", duration:60, orderStart:"", orderAttention:"", orderEnd:"", type:"descanso"},
+  {name: "Fase C - Serie 2 (10 s, 5 disparos)", duration:10, orderStart:"10 SECONDS SERIES — CARGUEN", orderAttention:"ATENCIÓN", orderEnd:"STOP — DESCARGUEN", type:"carguen"},
+  {name: "Descanso 1 minuto", duration:60, orderStart:"", orderAttention:"", orderEnd:"", type:"descanso"},
+  {name: "Fase C - Serie 3 (10 s, 5 disparos)", duration:10, orderStart:"10 SECONDS SERIES — CARGUEN", orderAttention:"ATENCIÓN", orderEnd:"STOP — DESCARGUEN", type:"carguen"},
 ];
-
-// Sonidos codificados en base64 (simple beep para inicio, fin y tic tac)
-const soundStart = new Audio("data:audio/wav;base64,UklGRkQAAABXQVZFZm10IBAAAAABAAEA..."); // reemplazar por sonido real o usar audio externo
-const soundAttention = new Audio("data:audio/wav;base64,UklGRjQAAABXQVZFZm10IBAAAAABAAEA..."); // sonido señal ATENCIÓN
-const soundStop = new Audio("data:audio/wav;base64,UklGRjQAAABXQVZFZm10IBAAAAABAAEA..."); // sonido final STOP
-const soundTick = new Audio("data:audio/wav;base64,UklGRiYAAABXQVZFZm10IBAAAAABAAEA..."); // tic tac
 
 let currentPhaseIndex = 0;
 let timeLeft = 0;
 let interval = null;
 let isPaused = false;
+let currentSubPhase = "start"; // 'start' para "CARGUEN", 'attention' para 150s, etc.
 
 const phaseEl = document.getElementById("phase");
 const timerEl = document.getElementById("timer");
 const orderEl = document.getElementById("order");
 const nextOrderEl = document.getElementById("nextOrder");
 const startPauseBtn = document.getElementById("startPauseBtn");
+
+function setBodyClassForPhase(phase, subPhase) {
+  if(subPhase === "start") {
+    document.body.className = 'carguen';
+  } else if(subPhase === "attention") {
+    document.body.className = 'atencion';
+  } else {
+    document.body.className = 'descanso';
+  }
+}
 
 function playSound(audio) {
   if(audio) {
@@ -75,15 +83,23 @@ function playSound(audio) {
   }
 }
 
+// Simplificados sonidos externos o se pueden usar reales
+const soundStart = new Audio("https://actions.google.com/sounds/v1/alarms/beep_short.ogg");
+const soundAttention = new Audio("https://actions.google.com/sounds/v1/alarms/digital_watch_alarm_long.ogg");
+const soundStop = new Audio("https://actions.google.com/sounds/v1/alarms/warning_alarm.ogg");
+const soundTick = new Audio("https://actions.google.com/sounds/v1/alarms/beep_short.ogg");
+
 function startPauseTimer() {
   if(interval === null) {
     if(currentPhaseIndex >= phases.length) {
       currentPhaseIndex = 0;
     }
     if(timeLeft === 0) {
-      timeLeft = phases[currentPhaseIndex].duration;
-      updateDisplay();
-      playOrderSoundStart();
+      currentSubPhase = "start";
+      timeLeft = 3; // Duración para anunciar "CARGUEN"
+      updatePhaseDisplay();
+      playSound(soundStart);
+      setBodyClassForPhase(phases[currentPhaseIndex], currentSubPhase);
     }
     interval = setInterval(tick, 1000);
     isPaused = false;
@@ -116,40 +132,68 @@ function tick() {
     }
   }
   if(timeLeft <= 0) {
-    playSound(soundStop);
-    clearInterval(interval);
-    interval = null;
-    currentPhaseIndex++;
-    if(currentPhaseIndex < phases.length) {
-      setTimeout(() => {
-        timeLeft = phases[currentPhaseIndex].duration;
-        updateDisplay();
-        playOrderSoundStart();
-        interval = setInterval(tick, 1000);
-      }, 1500);
+    if(currentSubPhase === "start" && phases[currentPhaseIndex].orderAttention) {
+      // Cambio a fase atención (tiempo real de disparo)
+      currentSubPhase = "attention";
+      timeLeft = phases[currentPhaseIndex].duration;
+      orderEl.textContent = "Orden: " + phases[currentPhaseIndex].orderAttention;
+      playSound(soundAttention);
+      setBodyClassForPhase(phases[currentPhaseIndex], currentSubPhase);
+    } else if(currentSubPhase === "attention") {
+      // Fin fase atención
+      orderEl.textContent = "Orden: " + phases[currentPhaseIndex].orderEnd;
+      playSound(soundStop);
+      currentPhaseIndex++;
+      if(currentPhaseIndex < phases.length) {
+        currentSubPhase = "start";
+        timeLeft = 3; // Tiempo para anunciar siguiente "CARGUEN" si aplica
+        setTimeout(() => {
+          updatePhaseDisplay();
+          setBodyClassForPhase(phases[currentPhaseIndex], currentSubPhase);
+          playSound(soundStart);
+        }, 1500);
+      } else {
+        clearInterval(interval);
+        interval = null;
+        phaseEl.textContent = "Entrenamiento completado";
+        timerEl.textContent = "00:00";
+        orderEl.textContent = "Orden: --";
+        nextOrderEl.textContent = "--";
+        startPauseBtn.textContent = "Reiniciar";
+        return;
+      }
     } else {
-      phaseEl.textContent = "Entrenamiento completado";
-      timerEl.textContent = "00:00";
-      orderEl.textContent = "Orden: --";
-      nextOrderEl.textContent = "--";
-      startPauseBtn.textContent = "Reiniciar";
-      currentPhaseIndex = phases.length;
-      timeLeft = 0;
+      // Para pausas o descansos sin orden atención
+      currentPhaseIndex++;
+      if(currentPhaseIndex < phases.length) {
+        currentSubPhase = "start";
+        timeLeft = 3;
+        setTimeout(() => {
+          updatePhaseDisplay();
+          setBodyClassForPhase(phases[currentPhaseIndex], currentSubPhase);
+          playSound(soundStart);
+        }, 1500);
+      } else {
+        clearInterval(interval);
+        interval = null;
+        phaseEl.textContent = "Entrenamiento completado";
+        timerEl.textContent = "00:00";
+        orderEl.textContent = "Orden: --";
+        nextOrderEl.textContent = "--";
+        startPauseBtn.textContent = "Reiniciar";
+        return;
+      }
     }
   }
 }
 
-function playOrderSoundStart() {
+function updatePhaseDisplay() {
   const phase = phases[currentPhaseIndex];
-  if(phase.orderStart) {
+  phaseEl.textContent = phase.name;
+  if(currentSubPhase === "start") {
     orderEl.textContent = "Orden: " + phase.orderStart;
-    playSound(soundStart);
-    setTimeout(() => {
-      if(phase.orderAttention) {
-        orderEl.textContent = "Orden: " + phase.orderAttention;
-        playSound(soundAttention);
-      }
-    }, 3000);
+  } else if(currentSubPhase === "attention") {
+    orderEl.textContent = "Orden: " + phase.orderAttention;
   } else {
     orderEl.textContent = "Orden: --";
   }
@@ -159,11 +203,6 @@ function playOrderSoundStart() {
   } else {
     nextOrderEl.textContent = "--";
   }
-}
-
-function updateDisplay() {
-  const phase = phases[currentPhaseIndex];
-  phaseEl.textContent = phase.name;
   updateTimerDisplay(timeLeft);
 }
 
@@ -173,7 +212,6 @@ function updateTimerDisplay(seconds) {
   timerEl.textContent =
     (min < 10 ? "0" + min : min) + ":" + (sec < 10 ? "0" + sec : sec);
 }
-
 </script>
 
 </body>
